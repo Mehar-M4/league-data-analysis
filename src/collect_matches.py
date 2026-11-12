@@ -42,6 +42,9 @@ def _signal_handler(sig, frame):
 signal.signal(signal.SIGINT, _signal_handler)
 
 
+PATCH_START_TIME = None
+
+
 def get_patch_time_range(patches_mode: str) -> tuple:
     """Get start/end epoch timestamps for patch filtering.
     Returns (start_time, end_time) or (None, None) if not filtering."""
@@ -49,7 +52,11 @@ def get_patch_time_range(patches_mode: str) -> tuple:
     # For 'current' mode, we don't set timestamps — we rely on game_version filtering later.
     # The API doesn't directly support patch filtering, so we fetch recent matches
     # and filter by game_version during validation.
-    return (None, None)
+    # Patches ship roughly every 14 days, so bound match IDs by start time.
+    days = {'current': 14, 'last3': 42}.get(patches_mode)
+    if days is None:
+        return (None, None)
+    return (int(time.time()) - days * 86400, None)
 
 
 def validate_match(match_data: dict) -> bool:
@@ -126,7 +133,7 @@ def collect_matches_for_player(api: RiotAPIClient, db: Database,
     try:
         match_ids = api.get_match_ids_by_puuid(
             region, puuid, queue=RANKED_SOLO_QUEUE_ID,
-            start=0, count=100
+            start=0, count=100, start_time=PATCH_START_TIME
         )
 
         if not match_ids:
@@ -258,6 +265,8 @@ def main():
 
     logger.info("Starting match collection...")
     logger.info(f"Target: {format_number(total_target)} matches | Patches: {args.patches}")
+    global PATCH_START_TIME
+    PATCH_START_TIME, _ = get_patch_time_range(args.patches)
 
     os.makedirs('data', exist_ok=True)
 

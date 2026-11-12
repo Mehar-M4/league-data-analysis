@@ -219,7 +219,9 @@ def chart_easiest_to_learn(results: dict, output_dir: str, filter_name: str):
         logger.warning("No easiest to learn data, skipping")
         return
 
-    top10 = ranking[:10]
+    top10 = [e for e in ranking if e.get('learning_score') is not None][:10]
+    if not top10:
+        return
     top10.reverse()  # Reverse for horizontal bar chart (top at top)
 
     fig, ax = plt.subplots(figsize=CHART_FIGSIZE_MEDIUM)
@@ -264,7 +266,9 @@ def chart_best_to_master(results: dict, output_dir: str, filter_name: str):
         logger.warning("No best to master data, skipping")
         return
 
-    top10 = ranking[:10]
+    top10 = [e for e in ranking if e.get('mastery_score') is not None][:10]
+    if not top10:
+        return
     top10.reverse()
 
     fig, ax = plt.subplots(figsize=CHART_FIGSIZE_MEDIUM)
@@ -308,7 +312,9 @@ def chart_best_investment(results: dict, output_dir: str, filter_name: str):
         logger.warning("No best investment data, skipping")
         return
 
-    top10 = ranking[:10]
+    top10 = [e for e in ranking if e.get('investment_score') is not None][:10]
+    if not top10:
+        return
     top10.reverse()
 
     fig, ax = plt.subplots(figsize=CHART_FIGSIZE_MEDIUM)
